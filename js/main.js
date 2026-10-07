@@ -542,6 +542,28 @@
   /* ================================================================
      FORMS
      ================================================================ */
+  const WA_NUMBER = "918655556688";
+  const FORM_LABELS = {
+    name: "Name", property: "Property", services: "Services", phone: "Phone",
+    email: "Email", city: "City", rooms: "Rooms", ptype: "Property type",
+    pms: "Uses a PMS", cm: "Uses a channel manager", be: "Has a booking engine",
+    rm: "Uses revenue management", message: "Message"
+  };
+
+  // Turn the submitted form fields into a pre-filled WhatsApp message.
+  function buildWhatsAppUrl(form) {
+    const lines = [];
+    const title = form.getAttribute("data-wa-title") || "New enquiry from the RevAlpha website";
+    lines.push(title, "");
+    new FormData(form).forEach((value, key) => {
+      const v = String(value).trim();
+      if (!v) return;
+      lines.push((FORM_LABELS[key] || key) + ": " + v);
+    });
+    lines.push("", "Sent from " + location.host + location.pathname);
+    return "https://wa.me/" + WA_NUMBER + "?text=" + encodeURIComponent(lines.join("\n"));
+  }
+
   function initForms() {
     $$("form[data-form]").forEach((form) => {
       // Floating label state for selects + prefilled inputs
@@ -570,7 +592,12 @@
           if (firstErr) { firstErr.scrollIntoView({ behavior: "smooth", block: "center" }); const inp = $("input,select,textarea", firstErr); if (inp) inp.focus(); }
           return;
         }
+        // Send the collected answers to WhatsApp, then show the success state.
+        const waUrl = buildWhatsAppUrl(form);
         const success = form.parentElement.querySelector(".form-success");
+        const fallback = success ? success.querySelector("[data-wa-link]") : null;
+        if (fallback) fallback.setAttribute("href", waUrl);
+        window.open(waUrl, "_blank", "noopener,noreferrer");
         form.style.display = "none";
         if (success) { success.classList.add("is-on"); success.setAttribute("tabindex", "-1"); success.focus(); success.scrollIntoView({ behavior: "smooth", block: "center" }); }
       });
