@@ -47,7 +47,7 @@
   --radius-s: 14px;
   --radius-m: 22px;
   --radius-l: 30px;
-  --section-y: 70px;
+  --section-y: 45px;
 
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   --shadow-soft: 0 20px 44px -30px rgba(11, 31, 58, 0.22);
