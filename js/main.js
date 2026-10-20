@@ -296,44 +296,39 @@
     });
   }
 
-  function initCursor() {
-    if (!window.matchMedia) return;
-    if (!window.matchMedia("(pointer: fine)").matches) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const dot = doc.createElement("div"), ring = doc.createElement("div");
-    dot.className = "cursor-dot"; ring.className = "cursor-ring";
-    dot.setAttribute("aria-hidden", "true"); ring.setAttribute("aria-hidden", "true");
-    doc.body.appendChild(dot); doc.body.appendChild(ring);
-    const HOVER = "a, button, .btn, [role='button'], summary, label, input, textarea, select, [data-video]";
-    let mx = -100, my = -100, rx = -100, ry = -100, raf = null, live = false;
-    function tick() {
-      rx += (mx - rx) * 0.22; ry += (my - ry) * 0.22;
-      if (Math.abs(mx - rx) > 0.15 || Math.abs(my - ry) > 0.15) {
-        ring.style.transform = "translate(" + rx + "px," + ry + "px)";
-        raf = requestAnimationFrame(tick);
-      } else {
-        ring.style.transform = "translate(" + mx + "px," + my + "px)"; raf = null;
-      }
-    }
-    window.addEventListener("mousemove", function (e) {
-      mx = e.clientX; my = e.clientY;
-      dot.style.transform = "translate(" + mx + "px," + my + "px)";
-      if (!live) { live = true; rx = mx; ry = my; doc.body.classList.add("cursor-on"); }
-      if (!raf) raf = requestAnimationFrame(tick);
-    }, { passive: true });
-    doc.addEventListener("mouseover", function (e) {
-      const t = e.target;
-      doc.body.classList.toggle("cursor-hover", !!(t && t.closest && t.closest(HOVER)));
-    }, { passive: true });
-    doc.addEventListener("mousedown", function () { doc.body.classList.add("cursor-down"); });
-    doc.addEventListener("mouseup", function () { doc.body.classList.remove("cursor-down"); });
-    doc.addEventListener("mouseleave", function () { doc.body.classList.remove("cursor-on", "cursor-hover", "cursor-down"); });
-    doc.addEventListener("mouseenter", function () { if (live) doc.body.classList.add("cursor-on"); });
+  function initMegaMenu() {
+    const items = $$(".nav-item--has-mega");
+    if (!items.length) return;
+    const mq = window.matchMedia("(min-width: 1025px)");
+    const closeAll = (except) => items.forEach((it) => {
+      if (it === except) return;
+      it.classList.remove("is-open");
+      const t = $(".nav-link", it); if (t) t.setAttribute("aria-expanded", "false");
+    });
+    items.forEach((item) => {
+      const trigger = $(".nav-link", item);
+      const panel = $(".mega", item);
+      if (!trigger || !panel) return;
+      let hoverTimer = null;
+      const open = () => { closeAll(item); item.classList.add("is-open"); trigger.setAttribute("aria-expanded", "true"); };
+      const close = () => { item.classList.remove("is-open"); trigger.setAttribute("aria-expanded", "false"); };
+      item.addEventListener("mouseenter", () => { if (!mq.matches) return; clearTimeout(hoverTimer); open(); });
+      item.addEventListener("mouseleave", () => { if (!mq.matches) return; hoverTimer = setTimeout(close, 160); });
+      trigger.addEventListener("focus", () => { if (mq.matches) open(); });
+      trigger.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowDown") { e.preventDefault(); open(); const first = $(".mega__item", panel); if (first) first.focus(); }
+        if (e.key === "Escape") close();
+      });
+      panel.addEventListener("focusout", (e) => { if (!item.contains(e.relatedTarget)) close(); });
+    });
+    doc.addEventListener("keydown", (e) => { if (e.key === "Escape") closeAll(null); });
+    doc.addEventListener("click", (e) => { if (!e.target.closest(".nav-item--has-mega")) closeAll(null); });
+    mq.addEventListener("change", () => closeAll(null));
   }
 
   function boot() {
     initHeader(); initMobileMenu(); initActiveNav(); initCounters(); initAccordions(); initProblemPanels();
-    initCharts(); initCards(); initMarquee(); initForms(); initSwipers(); initVideoLightbox(); initYear(); initCursor();
+    initCharts(); initCards(); initMarquee(); initForms(); initSwipers(); initVideoLightbox(); initYear(); initMegaMenu();
   }
   if (doc.readyState === "loading") doc.addEventListener("DOMContentLoaded", boot); else boot();
 })();
